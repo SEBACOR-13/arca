@@ -9,3 +9,4 @@ respaldos/
 .pytest_cache/
 .ruff_cache/
 secretos-para-render.txt
+secretos.env
