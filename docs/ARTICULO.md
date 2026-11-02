@@ -1,6 +1,6 @@
 ---
 title: "Respaldar Cassandra cuando no tienes acceso a los nodos"
-published: false
+published: true
 description: "Astra DB no te deja hacer nodetool snapshot. Construí la alternativa, la medí contra una base real y encontré tres límites que ningún tutorial menciona: el incremental que no ahorra lectura, los counter que no se pueden restaurar y lo borrado que resucita."
 tags: cassandra, nosql, devops, backup
 cover_image: ""
