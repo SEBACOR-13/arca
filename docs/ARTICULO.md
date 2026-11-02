@@ -221,9 +221,47 @@ on:
     - cron: "0 6 * * *"   # 06:00 UTC = 01:00 en Perú
 ```
 
-Cada noche, GitHub Actions reconstruye el Secure Connect Bundle desde un
-secret en base64, ejecuta el respaldo contra Astra, y publica el `.tar.gz`
-**como asset de una release**.
+Cada noche, GitHub Actions pide el Secure Connect Bundle a la API de Astra,
+ejecuta el respaldo, y publica el `.tar.gz` **como asset de una release**.
+
+Ese primer paso empezó siendo otra cosa, y merece un párrafo. El driver no
+se conecta sin el bundle, que es un `.zip` de certificados, así que lo obvio
+es guardarlo como secret en base64. Son **16 416 caracteres** para pegar en
+un formulario web. Al ejecutarse, el job dijo esto:
+
+```
+base64 recibido: 16417 caracteres
+base64: error: invalid input
+```
+
+Un carácter de más. El pegado se había corrompido, y el error no apunta a
+nada útil. La solución no fue volver a pegarlo con más cuidado: fue **borrar
+el secret**. La API de Astra entrega el bundle a quien presente el token que
+ya hace falta para conectarse, así que el workflow lo pide fresco en cada
+ejecución. Un secret menos y un modo de fallo menos.
+
+Y todavía quedaba otro. Con el bundle ya correcto, la conexión seguía
+fallando:
+
+```
+AuthenticationFailed: code=0100 [Bad credentials]
+message="Provided username token and/or password are incorrect"
+```
+
+El token era válido —la llamada a la API acababa de funcionar con él—, pero
+esa llamada hacía `.strip()` y el driver no. El valor pegado arrastraba un
+salto de línea invisible. Un `\n` al final de una contraseña produce un error
+que no se parece en nada a su causa, así que ahora toda variable de entorno
+se lee limpia:
+
+```python
+def _var(nombre: str, por_defecto: str = "") -> str:
+    return os.getenv(nombre, por_defecto).strip()
+```
+
+Dos horas de depuración para dos líneas. Las pongo aquí porque ninguna de
+las dos aparece en un tutorial, y las dos son consecuencia de lo mismo:
+credenciales que viajan por un formulario web antes de llegar al código.
 
 Esa última decisión es la que más me gusta. Las releases de GitHub son
 durables, versionadas, descargables por URL y están fuera del proveedor de
