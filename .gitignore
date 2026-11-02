@@ -8,3 +8,4 @@ secure-connect-*.zip
 respaldos/
 .pytest_cache/
 .ruff_cache/
+secretos-para-render.txt
