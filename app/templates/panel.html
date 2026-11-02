@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>arca — respaldo de Apache Cassandra</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <span class="brand"><span class="mark">▦</span> arca
+      <small>respaldo lógico de Apache Cassandra</small></span>
+    <span class="estado {{ 'ok' if conectado else 'mal' }}">
+      {{ 'conectado a Astra DB' if conectado else 'sin conexión' }}
+    </span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  {% if aviso %}<p class="aviso">{{ aviso.replace('-', ' ') }}</p>{% endif %}
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+  <section class="panel">
+    <h1>Por qué esta herramienta existe</h1>
+    <p class="sub">
+      Astra DB no da acceso a los nodos, así que no hay <code>nodetool snapshot</code>
+      ni copia de SSTables. El único respaldo posible es <strong>lógico</strong>:
+      leer por el driver y escribir a disco. Eso trae tres problemas que no
+      existen en un motor relacional, y esta página los enseña funcionando.
+    </p>
+  </section>
+
+  <section class="panel">
+    <div class="cabecera">
+      <h2>Estado de la base</h2>
+      <form method="post" action="/respaldo" class="enlinea">
+        <input type="hidden" name="tipo" value="completo">
+        <button type="submit">Respaldo completo</button>
+      </form>
+    </div>
+
+    {% if tablas %}
+    <table class="tabla">
+      <thead><tr><th>Tabla</th><th class="num">Filas</th><th>Tipo</th></tr></thead>
+      <tbody>
+        {% for t in tablas %}
+        <tr>
+          <td><code>{{ t.tabla }}</code></td>
+          <td class="num">{{ t.filas }}</td>
+          <td>{% if t.es_contador %}<span class="etiqueta">counter</span>{% else %}normal{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="nota">
+      En Cassandra <code>COUNT(*)</code> recorre toda la tabla. Aquí vale porque
+      es una base de demostración; en producción sería inaceptable.
+    </p>
+    {% else %}
+    <p class="vacio">No hay conexión con la base.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Provocar un desastre</h2>
+    <p class="sub">Borra filas de verdad, para poder enseñar la restauración.</p>
+    <form method="post" action="/desastre" class="enlinea">
+      <select name="tabla">
+        {% for n in nombres %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+      </select>
+      <input type="number" name="cuantas" value="5" min="1" max="50">
+      <button type="submit" class="peligro">Borrar filas</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Respaldos en este contenedor</h2>
+    <p class="sub">
+      El disco de Render es efímero: estos desaparecen al reiniciar. Por eso el
+      catálogo que importa es el de abajo.
+    </p>
+
+    {% if locales %}
+    <table class="tabla">
+      <thead><tr><th>Archivo</th><th>Tipo</th><th>Momento</th><th class="num">Filas</th><th></th></tr></thead>
+      <tbody>
+        {% for r in locales %}
+        <tr>
+          <td><code>{{ r.archivo }}</code></td>
+          <td><span class="etiqueta {{ r.tipo }}">{{ r.tipo }}</span></td>
+          <td>{{ r.momento }}</td>
+          <td class="num">{{ r.filas }}</td>
+          <td class="acciones">
+            <a class="link" href="/descargar/{{ r.archivo }}">descargar</a>
+            <form method="post" action="/respaldo" class="enlinea">
+              <input type="hidden" name="tipo" value="incremental">
+              <input type="hidden" name="desde" value="{{ r.hasta }}">
+              <button type="submit" class="chico">incremental desde aquí</button>
+            </form>
+            <form method="post" action="/restaurar" class="enlinea">
+              <input type="hidden" name="archivo" value="{{ r.archivo }}">
+              <button type="submit" class="chico">restaurar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">Todavía no hay respaldos en este contenedor.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Catálogo durable — GitHub Releases</h2>
+    <p class="sub">
+      Un job programado con <code>cron</code> en GitHub Actions respalda la base
+      sin que nadie pulse nada y sube el paquete como asset de una release.
+      Repositorio: <code>{{ repo }}</code>
+    </p>
+
+    {% if releases %}
+    <table class="tabla">
+      <thead><tr><th>Paquete</th><th>Release</th><th>Publicado</th><th class="num">Bytes</th><th></th></tr></thead>
+      <tbody>
+        {% for r in releases %}
+        <tr>
+          <td><code>{{ r.nombre }}</code></td>
+          <td>{{ r.etiqueta }}</td>
+          <td>{{ r.momento }}</td>
+          <td class="num">{{ r.bytes }}</td>
+          <td class="acciones">
+            <form method="post" action="/restaurar-release" class="enlinea">
+              <input type="hidden" name="url" value="{{ r.url }}">
+              <button type="submit" class="chico">restaurar desde aquí</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">
+      Aún no hay respaldos publicados. El cron los irá creando, o se puede
+      lanzar a mano desde la pestaña Actions del repositorio.
+    </p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Lo que este respaldo no puede hacer</h2>
+    <ul class="lista">
+      <li><strong>No hay foto de un instante.</strong> Cassandra no tiene
+        transacciones multi-partición: mientras se exporta, la base sigue
+        aceptando escrituras.</li>
+      <li><strong>El incremental lee igual.</strong> Se sabe cuándo se escribió
+        una fila con <code>WRITETIME</code>, pero Cassandra no permite filtrar
+        por él en el <code>WHERE</code>: hay que leer todo y descartar en el
+        cliente. Ahorra espacio, no lectura.</li>
+      <li><strong>Los <code>counter</code> no se restauran.</strong> No admiten
+        <code>INSERT</code>, solo incrementos. Restaurarlos exige leer el valor
+        actual y aplicar la diferencia, lo que no es idempotente.</li>
+      <li><strong>Lo borrado reaparece.</strong> Un export lógico no guarda
+        tombstones. Restaurar sin modo espejo resucita documentos eliminados.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p>Base de Datos II · Astra DB (Cassandra) + Render · respaldo automatizado con GitHub Actions</p>
+</footer>
+</body>
+</html>

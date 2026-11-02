@@ -1,0 +1,127 @@
+:root {
+  --bg: #0e1410;
+  --surface: #161d18;
+  --borde: #263128;
+  --texto: #e6ece7;
+  --suave: #93a397;
+  --acento: #5dbb83;
+  --acento-suave: rgba(93, 187, 131, 0.13);
+  --ambar: #d9a441;
+  --rojo: #d9685f;
+  --radio: 9px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f8f6;
+    --surface: #ffffff;
+    --borde: #dfe6e0;
+    --texto: #1b241d;
+    --suave: #63726a;
+    --acento: #2f7d52;
+    --acento-suave: rgba(47, 125, 82, 0.09);
+    --ambar: #9a6c15;
+    --rojo: #b0392f;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--texto);
+  font: 15px/1.6 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--acento-suave);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.top { border-bottom: 1px solid var(--borde); background: var(--surface); }
+.top-inner {
+  max-width: 980px; margin: 0 auto; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+}
+.brand { font-weight: 650; font-size: 19px; }
+.brand small { color: var(--suave); font-weight: 400; font-size: 13px; margin-left: 6px; }
+.mark { color: var(--acento); }
+
+.estado { font-size: 13px; border-radius: 999px; padding: 3px 11px; white-space: nowrap; }
+.estado.ok { color: var(--acento); background: var(--acento-suave); }
+.estado.mal { color: var(--rojo); background: rgba(217, 104, 95, 0.12); }
+
+.wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+
+.panel {
+  margin-top: 22px; background: var(--surface);
+  border: 1px solid var(--borde); border-radius: 13px; padding: 20px;
+}
+
+.cabecera {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
+}
+
+h1 { font-size: 24px; margin: 0 0 8px; }
+h2 { font-size: 19px; margin: 0 0 6px; }
+.sub { color: var(--suave); margin: 0 0 14px; }
+
+.aviso {
+  background: var(--acento-suave); color: var(--acento);
+  border-radius: var(--radio); padding: 10px 14px; margin: 18px 0 0;
+}
+.error {
+  background: rgba(217, 104, 95, 0.12); color: var(--rojo);
+  border-radius: var(--radio); padding: 10px 14px; margin: 14px 0 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px;
+}
+
+.enlinea { display: inline-flex; gap: 8px; align-items: center; margin: 0; }
+
+button, select, input[type="number"] {
+  font: inherit; color: var(--texto);
+  border: 1px solid var(--borde); border-radius: var(--radio);
+  background: var(--bg); padding: 8px 12px;
+}
+button {
+  background: var(--acento); color: #06110a; border: 0;
+  font-weight: 600; cursor: pointer; padding: 9px 16px;
+}
+button:hover { filter: brightness(1.08); }
+button.peligro { background: var(--rojo); color: #fff; }
+button.chico { padding: 5px 10px; font-size: 13px; font-weight: 500; }
+input[type="number"] { width: 90px; }
+
+.tabla { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+.tabla th {
+  text-align: left; color: var(--suave); font-weight: 600;
+  padding: 8px 10px; border-bottom: 1px solid var(--borde);
+}
+.tabla td { padding: 10px; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+.tabla tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.acciones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.etiqueta {
+  font-size: 12px; border: 1px solid var(--borde);
+  border-radius: 999px; padding: 1px 9px; color: var(--suave);
+}
+.etiqueta.completo { color: var(--acento); border-color: var(--acento); }
+.etiqueta.incremental { color: var(--ambar); border-color: var(--ambar); }
+
+.lista { margin: 10px 0 0; padding-left: 20px; }
+.lista li { margin-bottom: 10px; color: var(--suave); }
+.lista strong { color: var(--texto); }
+
+.nota, .vacio { color: var(--suave); font-size: 13px; margin-top: 12px; }
+.link { color: var(--acento); text-decoration: none; font-size: 13px; }
+.link:hover { text-decoration: underline; }
+
+.foot { border-top: 1px solid var(--borde); padding: 16px; text-align: center; }
+.foot p { margin: 0; color: var(--suave); font-size: 13px; }

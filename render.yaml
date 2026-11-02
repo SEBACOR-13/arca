@@ -1,0 +1,20 @@
+# El servicio como codigo. autoDeploy en false: el unico camino a produccion
+# es el pipeline de GitHub Actions.
+services:
+  - type: web
+    name: arca
+    runtime: docker
+    plan: free
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
+    healthCheckPath: /health
+    envVars:
+      - key: ASTRA_DB_TOKEN
+        sync: false
+      - key: ASTRA_SCB_B64
+        sync: false
+      - key: ASTRA_KEYSPACE
+        value: shortener
+      - key: GH_REPO
+        value: SEBACOR-13/arca

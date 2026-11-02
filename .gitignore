@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.zip
+secure-connect-*.zip
+respaldos/
+.pytest_cache/
+.ruff_cache/

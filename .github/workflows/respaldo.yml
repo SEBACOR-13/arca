@@ -1,0 +1,93 @@
+# Respaldo desatendido de la base Cassandra.
+#
+# Este workflow ES la estrategia de respaldo: nadie abre un panel ni ejecuta
+# nada a mano. Cada dia a las 06:00 UTC lee la base, arma el paquete y lo
+# publica como asset de una release, que es el catalogo durable.
+name: Respaldo programado
+
+on:
+  schedule:
+    # 06:00 UTC = 01:00 en Peru
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: "completo o incremental"
+        type: choice
+        options: [completo, incremental]
+        default: completo
+      desde_writetime:
+        description: "WRITETIME de partida (solo para incremental)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  respaldar:
+    name: Respaldar Astra DB
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Reconstruir el Secure Connect Bundle
+        env:
+          SCB_B64: ${{ secrets.ASTRA_SCB_B64 }}
+        run: |
+          if [ -z "$SCB_B64" ]; then
+            echo "Falta el secret ASTRA_SCB_B64."
+            exit 1
+          fi
+          echo "$SCB_B64" | base64 -d > secure-connect.zip
+          echo "bundle de $(stat -c%s secure-connect.zip) bytes"
+
+      - name: Ejecutar el respaldo
+        env:
+          ASTRA_DB_TOKEN: ${{ secrets.ASTRA_DB_TOKEN }}
+          ASTRA_SCB_PATH: secure-connect.zip
+          ASTRA_KEYSPACE: shortener
+        run: |
+          mkdir -p respaldos
+          if [ "${{ inputs.tipo }}" = "incremental" ] && [ -n "${{ inputs.desde_writetime }}" ]; then
+            python scripts/respaldar.py --incremental-desde "${{ inputs.desde_writetime }}" --etiqueta manual
+          else
+            python scripts/respaldar.py --etiqueta "${{ github.event_name }}"
+          fi
+
+      - name: Publicar el paquete como release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          nombre=$(python -c "import json;print(json.load(open('respaldos/ultimo.json'))['nombre'])")
+          tipo=$(python -c "import json;print(json.load(open('respaldos/ultimo.json'))['tipo'])")
+          filas=$(python -c "import json;print(json.load(open('respaldos/ultimo.json'))['filas'])")
+          corte=$(python -c "import json;print(json.load(open('respaldos/ultimo.json'))['hasta_writetime'])")
+          etiqueta="respaldo-$(date -u +%Y%m%d-%H%M%S)"
+
+          gh release create "$etiqueta" "respaldos/$nombre" \
+            --title "Respaldo $tipo · $(date -u +'%Y-%m-%d %H:%M UTC')" \
+            --notes "Respaldo logico $tipo de la keyspace shortener.
+
+          Filas guardadas: $filas
+          hasta_writetime: $corte
+
+          Para un incremental posterior, lanzar este workflow a mano con ese valor."
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo "### Respaldo" >> $GITHUB_STEP_SUMMARY
+          if [ -f respaldos/ultimo.json ]; then
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat respaldos/ultimo.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "El respaldo no llego a generarse." >> $GITHUB_STEP_SUMMARY
+          fi
