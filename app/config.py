@@ -24,12 +24,23 @@ class Settings:
         return bool(self.token) and bool(self.scb_path or self.scb_b64)
 
 
+def _var(nombre: str, por_defecto: str = "") -> str:
+    """Lee una variable de entorno y le quita los espacios de los extremos.
+
+    Estos valores se pegan a mano en formularios web (Render, GitHub
+    Secrets) y es facil que arrastren un salto de linea. Un token con un
+    '\\n' al final falla la autenticacion CQL con "Bad credentials", que no
+    se parece en nada a la causa real.
+    """
+    return os.getenv(nombre, por_defecto).strip()
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings(
-        token=os.getenv("ASTRA_DB_TOKEN", ""),
-        scb_path=os.getenv("ASTRA_SCB_PATH", ""),
-        scb_b64=os.getenv("ASTRA_SCB_B64", ""),
-        keyspace=os.getenv("ASTRA_KEYSPACE", "shortener"),
-        gh_repo=os.getenv("GH_REPO", "SEBACOR-13/arca"),
+        token=_var("ASTRA_DB_TOKEN"),
+        scb_path=_var("ASTRA_SCB_PATH"),
+        scb_b64=_var("ASTRA_SCB_B64"),
+        keyspace=_var("ASTRA_KEYSPACE", "shortener"),
+        gh_repo=_var("GH_REPO", "SEBACOR-13/arca"),
     )
