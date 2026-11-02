@@ -11,7 +11,7 @@ GitHub Actions** y se publica como asset de una *release*.
 
 | | |
 |---|---|
-| **App en vivo** | `https://arca.onrender.com` |
+| **App en vivo** | https://arca-yw30.onrender.com |
 | **Base respaldada** | Astra DB, keyspace `shortener` (la de [astra-shortener](https://github.com/SEBACOR-13/astra-shortener)) |
 | **Catálogo de respaldos** | [Releases de este repositorio](../../releases) |
 | **Automatización** | GitHub Actions: cron diario + despliegue en Render |
