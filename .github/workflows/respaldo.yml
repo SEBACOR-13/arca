@@ -37,27 +37,16 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
 
-      - name: Reconstruir el Secure Connect Bundle
+      # El bundle no se guarda como secret: se pide a la API de Astra con el
+      # mismo token que ya hace falta para conectarse. Un secret menos, y
+      # ademas siempre es el bundle vigente.
+      - name: Pedir el Secure Connect Bundle a Astra
         env:
-          SCB_B64: ${{ secrets.ASTRA_SCB_B64 }}
+          ASTRA_DB_ID: ${{ vars.ASTRA_DB_ID }}
+          ASTRA_DB_TOKEN: ${{ secrets.ASTRA_DB_TOKEN }}
         run: |
-          if [ -z "$SCB_B64" ]; then
-            echo "Falta el secret ASTRA_SCB_B64."
-            exit 1
-          fi
-          # El secret viaja por un formulario web: puede llegar con saltos de
-          # linea o espacios pegados. Se limpian antes de decodificar.
-          printf '%s' "$SCB_B64" | tr -d '[:space:]' > scb.b64
-          echo "base64 recibido: $(wc -c < scb.b64) caracteres"
-          if ! base64 -d scb.b64 > secure-connect.zip; then
-            echo "El base64 no se pudo decodificar: el secret llego incompleto."
-            exit 1
-          fi
-          echo "bundle de $(stat -c%s secure-connect.zip) bytes"
-          if ! unzip -tqq secure-connect.zip; then
-            echo "El zip reconstruido no es valido: vuelve a cargar el secret."
-            exit 1
-          fi
+          python scripts/bundle.py secure-connect.zip
+          unzip -tqq secure-connect.zip
 
       - name: Ejecutar el respaldo
         env:

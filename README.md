@@ -118,7 +118,7 @@ estrategia de respaldo:
 
 ```
 cron 06:00 UTC
-   ├─ reconstruye el Secure Connect Bundle desde un secret en base64
+   ├─ pide el Secure Connect Bundle a la API de Astra con el token
    ├─ ejecuta scripts/respaldar.py
    └─ publica el .tar.gz como asset de una release
 ```
@@ -164,7 +164,7 @@ ruff check app tests scripts
 |---|---|---|
 | `ASTRA_DB_TOKEN` | local, Render, Actions | Token `AstraCS:...` |
 | `ASTRA_SCB_PATH` | local | Ruta al Secure Connect Bundle `.zip` |
-| `ASTRA_SCB_B64` | Render, Actions | El mismo bundle en base64 |
+| `ASTRA_DB_ID` | Render, Actions | Id de la base; con el token basta para pedir el bundle |
 | `ASTRA_KEYSPACE` | todas | Por defecto `shortener` |
 | `GH_REPO` | todas | Repositorio cuyas releases forman el catálogo |
 
