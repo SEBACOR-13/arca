@@ -10,3 +10,4 @@ respaldos/
 .ruff_cache/
 secretos-para-render.txt
 secretos.env
+ARCA-astra.env
