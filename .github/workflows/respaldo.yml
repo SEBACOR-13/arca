@@ -45,8 +45,19 @@ jobs:
             echo "Falta el secret ASTRA_SCB_B64."
             exit 1
           fi
-          echo "$SCB_B64" | base64 -d > secure-connect.zip
+          # El secret viaja por un formulario web: puede llegar con saltos de
+          # linea o espacios pegados. Se limpian antes de decodificar.
+          printf '%s' "$SCB_B64" | tr -d '[:space:]' > scb.b64
+          echo "base64 recibido: $(wc -c < scb.b64) caracteres"
+          if ! base64 -d scb.b64 > secure-connect.zip; then
+            echo "El base64 no se pudo decodificar: el secret llego incompleto."
+            exit 1
+          fi
           echo "bundle de $(stat -c%s secure-connect.zip) bytes"
+          if ! unzip -tqq secure-connect.zip; then
+            echo "El zip reconstruido no es valido: vuelve a cargar el secret."
+            exit 1
+          fi
 
       - name: Ejecutar el respaldo
         env:
